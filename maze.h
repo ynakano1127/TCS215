@@ -1,0 +1,1 @@
+int ** makeMaze(int row, int column);
