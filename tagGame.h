@@ -34,6 +34,10 @@ typedef struct {
   // 画面関連のデータ
   WINDOW *mainWin;               // メインウィンドウ
   
+  int mazeHeight;
+  int mazeWidth;
+  int **maze;
+
   // 入力関連のデータ
   int     s;                     // 相手との会話用ファイルデスクリプタ
   fd_set  fdset;                 // 入力を監視するファイルデスクリプタの集合
@@ -68,6 +72,8 @@ TagGame* initTagGame(char myChara, int mySX, int mySY,
  *   s    - 相手との会話用ファイルデスクリプタ
  */
 void setupTagGame(TagGame *game, int s);
+void setupMazeForServer(TagGame *game);
+void setupMazeForClient(TagGame *game);
 
 /*
  * サーバー側鬼ごっこゲームの開始

@@ -3,9 +3,8 @@
 #include <signal.h>
 
 #include "tagGame.h"
+#include "maze.h"
 
-#define MAINWIN_LINES   20
-#define MAINWIN_COLUMS  40
 #define MAINWIN_SX      2
 #define MAINWIN_SY      1
 
@@ -68,16 +67,6 @@ TagGame* initTagGame(char myChara, int mySX, int mySY,
   noecho();
   cbreak();
 
-  game->mainWin = newwin(MAINWIN_LINES, MAINWIN_COLUMS, MAINWIN_SY, MAINWIN_SX);
-  
-  if (game->mainWin == NULL) {
-    endwin();
-    fprintf(stderr, "Error: terminal size is too small\n");
-    exit(1);
-  }
-
-  keypad(game->mainWin, TRUE);
-
   return game;
 }
 
@@ -90,7 +79,66 @@ void setupTagGame(TagGame *game, int s)
   game->fdsetWidth = s + 1;
   game->watchTime.tv_sec  = 0;
   game->watchTime.tv_usec = 100 * 1000;
+}
 
+void setupMazeForServer(TagGame *game){
+  game->mazeHeight = 21;
+  game->mazeWidth = 41;
+  game->maze = makeMaze(game->mazeHeight, game->mazeWidth);
+
+
+  char msg[SERVER_MSG_LEN];
+  sprintf(msg, "%3d %3d", game->mazeHeight, game->mazeWidth);
+  write(game->s, msg, SERVER_MSG_LEN);    
+
+  for(int h = 0; h < game->mazeHeight; h++){
+    for(int w = 0; w < game->mazeWidth; w++){
+      sprintf(msg, "%3d", game->maze[h][w]);
+      write(game->s, msg, SERVER_MSG_LEN);    
+    }
+  }
+
+  game->mainWin = newwin(game->mazeHeight, game->mazeWidth, MAINWIN_SY, MAINWIN_SX);
+
+  if (game->mainWin == NULL) {
+    endwin();
+    fprintf(stderr, "Error: terminal size is too small\n");
+    exit(1);
+  }
+
+  keypad(game->mainWin, TRUE);
+  box(game->mainWin, ACS_VLINE, ACS_HLINE);
+
+  wrefresh(game->mainWin);
+}
+
+void setupMazeForClient(TagGame *game){
+  char msg[SERVER_MSG_LEN];
+  read(game->s, msg, SERVER_MSG_LEN);
+  sscanf(msg, "%3d %3d", &game->mazeHeight, &game->mazeWidth);
+  fprintf(stderr, "%d %d\n", game->mazeHeight, game->mazeWidth);
+
+  game->maze = (int**)malloc(sizeof(int*) * game->mazeHeight);  
+  for(int i = 0; i < game->mazeHeight; i++){
+    game->maze[i] = (int*)malloc(sizeof(int) * game->mazeWidth);
+  }
+
+  for(int h = 0; h < game->mazeHeight; h++){
+    for(int w = 0; w < game->mazeWidth; w++){
+      read(game->s, msg, SERVER_MSG_LEN);
+      sscanf(msg, "%3d", &game->maze[h][w]);
+    }
+  }
+
+  game->mainWin = newwin(game->mazeHeight, game->mazeWidth, MAINWIN_SY, MAINWIN_SX);
+
+  if (game->mainWin == NULL) {
+    endwin();
+    fprintf(stderr, "Error: terminal size is too small\n");
+    exit(1);
+  }
+
+  keypad(game->mainWin, TRUE);
   box(game->mainWin, ACS_VLINE, ACS_HLINE);
 
   wrefresh(game->mainWin);
@@ -222,6 +270,16 @@ static void getClientInputData(TagGame *game, ClientInputData *clientData)
     flushinp(); 
 }
 
+int canGoThrough(TagGame *game, int y, int x){
+  if(y < 0  || game->mazeHeight <= y || x < 0 || game->mazeWidth <= x)
+    return 0;
+
+  if(game->maze[y][x] == 1){
+    return 0;
+  }
+  return 1;
+}
+
 static int updatePlayerStatus(TagGame *game, ServerInputData *serverData)
 {
   Player *my = &game->my;
@@ -233,44 +291,44 @@ static int updatePlayerStatus(TagGame *game, ServerInputData *serverData)
   switch (serverData->myKey) {
   case KEY_UP: 
   case MOVE_UP: 
-    if (my->y > 1) my->y--;
+    if (canGoThrough(game, my->y-1, my->x)) my->y--;
     break;
 
   case KEY_DOWN: 
   case MOVE_DOWN:
-    if (my->y < MAINWIN_LINES - 2) my->y++;
+    if (canGoThrough(game, my->y+1, my->x)) my->y++;
     break;
 
   case KEY_LEFT: 
   case MOVE_LEFT:
-    if (my->x > 1) my->x--;
+    if (canGoThrough(game, my->y, my->x-1)) my->x--;
     break;
 
   case KEY_RIGHT: 
   case MOVE_RIGHT:
-    if (my->x < MAINWIN_COLUMS - 2) my->x++;
+    if (canGoThrough(game, my->y, my->x+1)) my->x++;
     break;
   }
 
   switch (serverData->itKey) {
   case KEY_UP: 
   case MOVE_UP: 
-    if (it->y > 1) it->y--;
+    if (canGoThrough(game, it->y-1, it->x)) it->y--;
     break;
 
   case KEY_DOWN: 
   case MOVE_DOWN:
-    if (it->y < MAINWIN_LINES - 2) it->y++;
+    if (canGoThrough(game, it->y+1, it->x)) it->y++;
     break;
 
   case KEY_LEFT: 
   case MOVE_LEFT:
-    if (it->x > 1) it->x--;
+    if (canGoThrough(game, it->y, it->x-1)) it->x--;
     break;
 
   case KEY_RIGHT: 
   case MOVE_RIGHT:
-    if (it->x < MAINWIN_COLUMS - 2) it->x++;
+    if (canGoThrough(game, it->y, it->x+1)) it->x++;
     break;
   }
 
@@ -305,6 +363,17 @@ static void printGame(TagGame *game)
   Player *preMy = &game->preMy; 
   Player *it    = &game->it;    
   Player *preIt = &game->preIt; 
+
+  for(int h = 0; h < game->mazeHeight; h++){
+    for(int w = 0; w < game->mazeWidth; w++){
+      if(game->maze[h][w] == 1){
+        mvwaddch(mw, h, w, '#');
+      }else{
+        mvwaddch(mw, h, w, ' ');
+      }
+    }
+  }
+
 
   mvwaddch(mw, preIt->y, preIt->x, ' ');
   mvwaddch(mw, it->y, it->x, it->chara);

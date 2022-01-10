@@ -2,15 +2,15 @@
 CC=gcc
 
 # Compiler Options for development
-CFLAGS=-Wall
+CFLAGS=-Wall -g3
 
 all:				tagServer tagClient cursesTest mazeTest
 
-tagServer:	tagServer.c tagGame.o
-						$(CC) $(CFLAGS) -o tagServer tagServer.c tagGame.o snet.a -lcurses
+tagServer:	tagServer.c tagGame.o maze.o
+						$(CC) $(CFLAGS) -o tagServer tagServer.c tagGame.o maze.o snet.a -lcurses
 
-tagClient:	tagClient.c tagGame.o
-						$(CC) $(CFLAGS) -o tagClient tagClient.c tagGame.o snet.a -lcurses
+tagClient:	tagClient.c tagGame.o maze.o
+						$(CC) $(CFLAGS) -o tagClient tagClient.c tagGame.o maze.o snet.a -lcurses
 
 tagGame.o:	tagGame.c tagGame.h
 						$(CC) $(CFLAGS) -c tagGame.c

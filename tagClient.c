@@ -35,6 +35,7 @@ int main(int argc, char *argv[])
 
   // 鬼ごっこゲームの準備
   setupTagGame(game, s);
+  setupMazeForClient(game);
 
   // 鬼ごっこゲームの開始
   playClientTagGame(game);
