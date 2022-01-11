@@ -62,6 +62,12 @@ TagGame* initTagGame(char myChara, int mySX, int mySY,
   memcpy(&game->preIt, &game->it, sizeof(Player));
 
   initscr();
+
+  start_color();
+  assume_default_colors(COLOR_WHITE, COLOR_BLACK);
+  init_pair(1, COLOR_BLACK,   COLOR_WHITE);
+  curs_set(0);
+
   signal(SIGINT, die);
   signal(SIGTERM, die);
   noecho();
@@ -367,7 +373,9 @@ static void printGame(TagGame *game)
   for(int h = 0; h < game->mazeHeight; h++){
     for(int w = 0; w < game->mazeWidth; w++){
       if(game->maze[h][w] == 1){
-        mvwaddch(mw, h, w, '#');
+        wattron(game->mainWin, COLOR_PAIR(1));
+        mvwaddch(mw, h, w, ' ');
+        wattroff(game->mainWin, COLOR_PAIR(1));
       }else{
         mvwaddch(mw, h, w, ' ');
       }
