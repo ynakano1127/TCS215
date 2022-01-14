@@ -31,13 +31,20 @@ typedef struct
   char chara;
   int x;
   int y;
+} Demon;
+
+typedef struct
+{
+  char chara;
+  int x;
+  int y;
   int life;
 } Player;
 
 typedef struct
 {
-  Player my;
-  Player it;
+  Demon demon;
+  Player player;
 
   WINDOW *mainWin;
   WINDOW *lifeWin;

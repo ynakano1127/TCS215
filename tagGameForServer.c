@@ -10,21 +10,20 @@ static int updatePlayerStatus(TagGame *game, ServerInputData *serverData);
 static void sendGameInfo(TagGame *game);
 static int canGoThrough(TagGame *game, int y, int x);
 
-TagGame *initTagGameForServer(char myChara, int mySX, int mySY, int myLife,
-                              char itChara, int itSX, int itSY, int itLife)
+TagGame *initTagGameForServer(char dChara, int dSX, int dSY,
+                              char pChara, int pSX, int pSY, int pLife)
 {
   TagGame *game = (TagGame *)malloc(sizeof(TagGame));
 
   bzero(game, sizeof(TagGame));
 
-  game->my.chara = myChara;
-  game->my.x = mySX;
-  game->my.y = mySY;
-  game->my.life = myLife;
-  game->it.chara = itChara;
-  game->it.x = itSX;
-  game->it.y = itSY;
-  game->it.life = itLife;
+  game->demon.chara = dChara;
+  game->demon.x = dSX;
+  game->demon.y = dSY;
+  game->player.chara = pChara;
+  game->player.x = pSX;
+  game->player.y = pSY;
+  game->player.life = pLife;
 
   initscr();
 
@@ -165,9 +164,7 @@ static void getServerInputData(TagGame *game, ServerInputData *serverData)
 
 static int updatePlayerStatus(TagGame *game, ServerInputData *serverData)
 {
-  Player *my = &game->my;
-  Player *it = &game->it;
-
+  Demon *my = &game->demon;
   switch (serverData->myKey)
   {
   case KEY_UP:
@@ -195,6 +192,7 @@ static int updatePlayerStatus(TagGame *game, ServerInputData *serverData)
     break;
   }
 
+  Player *it = &game->player;
   switch (serverData->itKey)
   {
   case KEY_UP:
@@ -232,8 +230,8 @@ static int updatePlayerStatus(TagGame *game, ServerInputData *serverData)
 
 static void sendGameInfo(TagGame *game)
 {
-  Player *my = &game->my;
-  Player *it = &game->it;
+  Demon *my = &game->demon;
+  Player *it = &game->player;
   char msg[SERVER_MSG_LEN];
 
   sprintf(msg, "%3d %3d %3d %3d", my->x, my->y, it->x, it->y);

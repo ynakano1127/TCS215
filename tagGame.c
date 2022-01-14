@@ -8,9 +8,6 @@
 void printGame(TagGame *game)
 {
   WINDOW *mw = game->mainWin;
-  Player *my = &game->my;
-  Player *it = &game->it;
-
   for (int h = 0; h < game->mazeHeight; h++)
   {
     for (int w = 0; w < game->mazeWidth; w++)
@@ -28,13 +25,16 @@ void printGame(TagGame *game)
     }
   }
 
+  Demon *my = &game->demon;
+  Player *it = &game->player;
+
   mvwaddch(mw, it->y, it->x, it->chara);
   mvwaddch(mw, my->y, my->x, my->chara);
 
   WINDOW *lw = game->lifeWin;
   box(lw, '|', '-');
   wmove(lw, 2, 1);
-  wprintw(lw, "LIFE: %d", game->my.life);
+  wprintw(lw, "LIFE: %d", game->player.life);
 
   wrefresh(mw);
   wrefresh(lw);

@@ -9,21 +9,20 @@ static void getClientInputData(TagGame *game, ClientInputData *clientData);
 static void copyGameState(TagGame *game, ClientInputData *clientData);
 static void sendMyPressedKey(TagGame *game, ClientInputData *clietData);
 
-TagGame *initTagGameForClient(char myChara, int mySX, int mySY, int myLife,
-                              char itChara, int itSX, int itSY, int itLife)
+TagGame *initTagGameForClient(char dChara, int dSX, int dSY,
+                              char pChara, int pSX, int pSY, int pLife)
 {
   TagGame *game = (TagGame *)malloc(sizeof(TagGame));
 
   bzero(game, sizeof(TagGame));
 
-  game->my.chara = myChara;
-  game->my.x = mySX;
-  game->my.y = mySY;
-  game->my.life = myLife;
-  game->it.chara = itChara;
-  game->it.x = itSX;
-  game->it.y = itSY;
-  game->it.life = itLife;
+  game->demon.chara = dChara;
+  game->demon.x = dSX;
+  game->demon.y = dSY;
+  game->player.chara = pChara;
+  game->player.x = pSX;
+  game->player.y = pSY;
+  game->player.life = pLife;
 
   initscr();
 
@@ -173,8 +172,8 @@ static void getClientInputData(TagGame *game, ClientInputData *clientData)
 
 static void copyGameState(TagGame *game, ClientInputData *clientData)
 {
-  Player *my = &game->my;
-  Player *it = &game->it;
+  Player *my = &game->player;
+  Demon *it = &game->demon;
 
   if (clientData->myX == 0)
     return;

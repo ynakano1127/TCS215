@@ -2,21 +2,20 @@
 #include "tagGameForServer.h"
 
 #define PORT 10000
-#define MY_CHARA 'o'
-#define MY_SX 1
-#define MY_SY 1
-#define MY_LIFE 5
-#define IT_CHARA 'x'
-#define IT_SX 10
-#define IT_SY 10
-#define IT_LIFE 5
+#define D_CHARA 'o'
+#define D_SX 1
+#define D_SY 1
+#define PLAYER_CHARA 'x'
+#define PLAYER_SX 10
+#define PLAYER_SY 10
+#define PLAYER_LIFE 5
 
 int main(int argc, char *argv[])
 {
   int s;
   TagGame *game;
 
-  game = initTagGameForServer(MY_CHARA, MY_SX, MY_SY, MY_LIFE, IT_CHARA, IT_SX, IT_SY, IT_LIFE);
+  game = initTagGameForServer(D_CHARA, D_SX, D_SY, PLAYER_CHARA, PLAYER_SX, PLAYER_SY, PLAYER_LIFE);
 
   s = setupServer(PORT);
 

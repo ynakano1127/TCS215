@@ -5,8 +5,8 @@
 
 #include "tagGame.h"
 
-TagGame *initTagGameForClient(char myChara, int mySX, int mySY, int myLife,
-                              char itChara, int itSX, int itSY, int itLife);
+TagGame *initTagGameForClient(char dChara, int dSX, int dSY,
+                              char pChara, int pSX, int pSY, int pLife);
 void setupTagGameForClient(TagGame *game, int s);
 void setupMazeForClient(TagGame *game);
 void playTagGameForClient(TagGame *game);
