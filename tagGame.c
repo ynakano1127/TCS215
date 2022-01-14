@@ -9,9 +9,7 @@ void printGame(TagGame *game)
 {
   WINDOW *mw = game->mainWin;
   Player *my = &game->my;
-  Player *preMy = &game->preMy;
   Player *it = &game->it;
-  Player *preIt = &game->preIt;
 
   for (int h = 0; h < game->mazeHeight; h++)
   {
@@ -30,10 +28,7 @@ void printGame(TagGame *game)
     }
   }
 
-  mvwaddch(mw, preIt->y, preIt->x, ' ');
   mvwaddch(mw, it->y, it->x, it->chara);
-
-  mvwaddch(mw, preMy->y, preMy->x, ' ');
   mvwaddch(mw, my->y, my->x, my->chara);
 
   WINDOW *lw = game->lifeWin;

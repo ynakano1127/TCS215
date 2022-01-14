@@ -26,9 +26,6 @@ TagGame *initTagGameForServer(char myChara, int mySX, int mySY, int myLife,
   game->it.y = itSY;
   game->it.life = itLife;
 
-  memcpy(&game->preMy, &game->my, sizeof(Player));
-  memcpy(&game->preIt, &game->it, sizeof(Player));
-
   initscr();
 
   start_color();
@@ -171,9 +168,6 @@ static int updatePlayerStatus(TagGame *game, ServerInputData *serverData)
   Player *my = &game->my;
   Player *it = &game->it;
 
-  memcpy(&game->preMy, &game->my, sizeof(Player));
-  memcpy(&game->preIt, &game->it, sizeof(Player));
-
   switch (serverData->myKey)
   {
   case KEY_UP:
@@ -241,10 +235,6 @@ static void sendGameInfo(TagGame *game)
   Player *my = &game->my;
   Player *it = &game->it;
   char msg[SERVER_MSG_LEN];
-
-  if (memcmp(&game->my, &game->preMy, sizeof(Player)) == 0 &&
-      memcmp(&game->it, &game->preIt, sizeof(Player)) == 0)
-    return;
 
   sprintf(msg, "%3d %3d %3d %3d", my->x, my->y, it->x, it->y);
 

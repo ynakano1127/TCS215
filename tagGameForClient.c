@@ -25,9 +25,6 @@ TagGame *initTagGameForClient(char myChara, int mySX, int mySY, int myLife,
   game->it.y = itSY;
   game->it.life = itLife;
 
-  memcpy(&game->preMy, &game->my, sizeof(Player));
-  memcpy(&game->preIt, &game->it, sizeof(Player));
-
   initscr();
 
   start_color();
@@ -181,9 +178,6 @@ static void copyGameState(TagGame *game, ClientInputData *clientData)
 
   if (clientData->myX == 0)
     return;
-
-  memcpy(&game->preMy, &game->my, sizeof(Player));
-  memcpy(&game->preIt, &game->it, sizeof(Player));
 
   my->x = clientData->myX;
   my->y = clientData->myY;

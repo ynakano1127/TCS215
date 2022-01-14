@@ -37,9 +37,7 @@ typedef struct
 typedef struct
 {
   Player my;
-  Player preMy;
   Player it;
-  Player preIt;
 
   WINDOW *mainWin;
   WINDOW *lifeWin;
