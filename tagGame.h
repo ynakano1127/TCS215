@@ -16,7 +16,7 @@
 #define LIFE_WIN_HEIGHT 5
 
 #define MSG_LEN 20
-#define SERVER_MSG_LEN (8 + 8 + 1)
+#define SERVER_MSG_LEN (4 * 5 + 1)
 #define CLIENT_MSG_LEN (4 + 1)
 
 #define MOVE_UP 'i'
@@ -74,6 +74,7 @@ typedef struct
   int myKey;
   int myX;
   int myY;
+  int mylife;
   int itX;
   int itY;
   int quit;

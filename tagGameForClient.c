@@ -161,8 +161,8 @@ static void getClientInputData(TagGame *game, ClientInputData *clientData)
       clientData->dead = TRUE;
     else
     {
-      sscanf(msg, "%3d %3d %3d %3d ", &clientData->itX, &clientData->itY,
-             &clientData->myX, &clientData->myY);
+      sscanf(msg, "%3d %3d %3d %3d %3d", &clientData->itX, &clientData->itY,
+             &clientData->myX, &clientData->myY, &clientData->mylife);
     }
   }
 
@@ -181,6 +181,7 @@ static void copyGameState(TagGame *game, ClientInputData *clientData)
 
   my->x = clientData->myX;
   my->y = clientData->myY;
+  my->life = clientData->mylife;
   it->x = clientData->itX;
   it->y = clientData->itY;
 }

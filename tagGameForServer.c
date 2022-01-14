@@ -98,9 +98,11 @@ void playTagGameForServer(TagGame *game)
     if (serverData.quit)
       break;
 
-    int win = updatePlayerStatus(game, &serverData);
+    if(updatePlayerStatus(game, &serverData)){
+      game->player.life--;
+    }
 
-    if (win)
+    if (game->player.life < 0)
     {
       write(game->s, "dead", 5);
       printMessage(game->mainWin, "WIN", 3);
@@ -227,7 +229,7 @@ static void sendGameInfo(TagGame *game)
   Player *it = &game->player;
   char msg[SERVER_MSG_LEN];
 
-  sprintf(msg, "%3d %3d %3d %3d", my->x, my->y, it->x, it->y);
+  sprintf(msg, "%3d %3d %3d %3d %3d", my->x, my->y, it->x, it->y, it->life);
 
   write(game->s, msg, SERVER_MSG_LEN);
 }
