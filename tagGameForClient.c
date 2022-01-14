@@ -24,17 +24,27 @@ TagGame *initTagGameForClient(char dChara, int dSX, int dSY,
   game->player.y = pSY;
   game->player.life = pLife;
 
+  game->playerNumber = 0;
+
   initscr();
 
   start_color();
   assume_default_colors(COLOR_WHITE, COLOR_BLACK);
   init_pair(1, COLOR_BLACK, COLOR_WHITE);
   curs_set(0);
-
   signal(SIGINT, die);
   signal(SIGTERM, die);
   noecho();
   cbreak();
+
+  game->lifeWin = newwin(LIFE_WIN_HEIGHT, LIFE_WIN_WIDTH, LIFEWIN_SY, LIFEWIN_SX);
+
+  if (game->lifeWin == NULL)
+  {
+    endwin();
+    fprintf(stderr, "Error: terminal size is too small\n");
+    exit(1);
+  }
 
   return game;
 }
@@ -48,15 +58,6 @@ void setupTagGameForClient(TagGame *game, int s)
   game->fdsetWidth = s + 1;
   game->watchTime.tv_sec = 0;
   game->watchTime.tv_usec = 100 * 1000;
-
-  game->lifeWin = newwin(LIFE_WIN_HEIGHT, LIFE_WIN_WIDTH, LIFEWIN_SY, LIFEWIN_SX);
-
-  if (game->lifeWin == NULL)
-  {
-    endwin();
-    fprintf(stderr, "Error: terminal size is too small\n");
-    exit(1);
-  }
 }
 
 void setupMazeForClient(TagGame *game)

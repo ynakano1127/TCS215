@@ -24,6 +24,8 @@
 #define MOVE_DOWN 'k'
 #define MOVE_RIGHT 'l'
 
+#define MAX_CLIENT_NUM 10
+
 typedef struct timeval TimeVal;
 
 typedef struct
@@ -45,6 +47,7 @@ typedef struct
 {
   Demon demon;
   Player player;
+  int playerNumber;
 
   WINDOW *mainWin;
   WINDOW *lifeWin;

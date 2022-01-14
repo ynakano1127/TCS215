@@ -31,13 +31,15 @@ void printGame(TagGame *game)
   mvwaddch(mw, it->y, it->x, it->chara);
   mvwaddch(mw, my->y, my->x, my->chara);
 
-  WINDOW *lw = game->lifeWin;
-  box(lw, '|', '-');
-  wmove(lw, 2, 1);
-  wprintw(lw, "LIFE: %d", game->player.life);
-
+  if (game->playerNumber != MAX_CLIENT_NUM)
+  {
+    WINDOW *lw = game->lifeWin;
+    box(lw, '|', '-');
+    wmove(lw, 2, 1);
+    wprintw(lw, "LIFE: %d", game->player.life);
+    wrefresh(lw);
+  }
   wrefresh(mw);
-  wrefresh(lw);
 }
 
 void printMessage(WINDOW *mw, char *message, int length)

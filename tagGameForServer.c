@@ -25,6 +25,8 @@ TagGame *initTagGameForServer(char dChara, int dSX, int dSY,
   game->player.y = pSY;
   game->player.life = pLife;
 
+  game->playerNumber = MAX_CLIENT_NUM;
+
   initscr();
 
   start_color();
@@ -49,15 +51,6 @@ void setupTagGameForServer(TagGame *game, int s)
   game->fdsetWidth = s + 1;
   game->watchTime.tv_sec = 0;
   game->watchTime.tv_usec = 100 * 1000;
-
-  game->lifeWin = newwin(LIFE_WIN_HEIGHT, LIFE_WIN_WIDTH, LIFEWIN_SY, LIFEWIN_SX);
-
-  if (game->lifeWin == NULL)
-  {
-    endwin();
-    fprintf(stderr, "Error: terminal size is too small\n");
-    exit(1);
-  }
 }
 
 void setupMazeForServer(TagGame *game)
