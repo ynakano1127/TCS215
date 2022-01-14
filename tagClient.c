@@ -1,49 +1,41 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "snet.h"           // 一対一通信ライブラリ
-#include "tagGame.h"        // 鬼ごっこモジュール
+#include "snet.h"
+#include "tagGameForClient.h"
 
-#define PORT       10000    // デフォルトのサーバー側ポート番号
-#define HOST_LEN   64       // ホスト名の最大長
-#define MY_CHARA   'o'      // 自分を表すキャラクタ
-#define MY_SX      10       // 自分の開始 X 座標
-#define MY_SY      10       // 自分の開始 Y 座標
+#define PORT 10000
+#define HOST_LEN 64
+#define MY_CHARA 'o'
+#define MY_SX 10
+#define MY_SY 10
 #define MY_LIFE 5
-#define IT_CHARA   'x'      // 相手を表すキャラクタ
-#define IT_SX      1        // 相手の開始 X 座標
-#define IT_SY      1        // 相手の開始 Y 座標
+#define IT_CHARA 'x'
+#define IT_SX 1
+#define IT_SY 1
 #define IT_LIFE 5
 
-int main(int argc, char *argv[]) 
-{ 
-  char     serverName[HOST_LEN];    // サーバーのホスト名
-  int      s;                       // クライアントとの会話用デスクリプタ
-  TagGame *game;                    // 鬼ごっこゲーム
+int main(int argc, char *argv[])
+{
+  char serverName[HOST_LEN];
+  int s;
+  TagGame *game;
 
-  // 鬼ごっこゲームの初期化
-  game = initTagGame(MY_CHARA, MY_SX, MY_SY, MY_LIFE, IT_CHARA, IT_SX, IT_SY, IT_LIFE);
+  game = initTagGameForClient(MY_CHARA, MY_SX, MY_SY, MY_LIFE, IT_CHARA, IT_SX, IT_SY, IT_LIFE);
 
-  // 引数で指定されたホスト名をサーバとする
-  // もし引数がなければ自分自身をサーバーとして仮定し，アクセスを試みる
-  if (argc == 2) 
+  if (argc == 2)
     strcpy(serverName, argv[1]);
   else
     gethostname(serverName, HOST_LEN);
 
-  // サーバーを準備する。指定のサーバーの指定のポートに接続すると,サーバー
-  // と会話するためのデスクリプタを返す
   s = setupClient(serverName, PORT);
 
-  // 鬼ごっこゲームの準備
-  setupTagGame(game, s);
+  setupTagGameForClient(game, s);
   setupMazeForClient(game);
 
-  // 鬼ごっこゲームの開始
-  playClientTagGame(game);
+  playTagGameForClient(game);
 
-  // 鬼ごっこゲームの後始末
-  destroyTagGame(game);
+  destroyTagGameForClient(game);
 
   return 0;
-} 
+}

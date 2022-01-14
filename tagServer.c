@@ -1,40 +1,33 @@
-#include "snet.h"           // 一対一通信ライブラリ
-#include "tagGame.h"        // 鬼ごっこモジュール
+#include "snet.h"
+#include "tagGameForServer.h"
 
-#define PORT       10000    // デフォルトのサーバー側ポート番号
-#define MY_CHARA   'o'      // 自分を表すキャラクタ
-#define MY_SX      1        // 自分の開始 X 座標
-#define MY_SY      1        // 自分の開始 Y 座標
+#define PORT 10000
+#define MY_CHARA 'o'
+#define MY_SX 1
+#define MY_SY 1
 #define MY_LIFE 5
-#define IT_CHARA   'x'      // 相手を表すキャラクタ
-#define IT_SX      10       // 相手の開始 X 座標
-#define IT_SY      10       // 相手の開始 Y 座標
+#define IT_CHARA 'x'
+#define IT_SX 10
+#define IT_SY 10
 #define IT_LIFE 5
 
-int main(int argc, char *argv[]) 
-{ 
-  int      s;       // クライアントとの会話用デスクリプタ
-  TagGame *game;    // 鬼ごっこゲーム
+int main(int argc, char *argv[])
+{
+  int s;
+  TagGame *game;
 
-  // 鬼ごっこゲームの初期化
-  game = initTagGame(MY_CHARA, MY_SX, MY_SY, MY_LIFE, IT_CHARA, IT_SX, IT_SY, IT_LIFE);
+  game = initTagGameForServer(MY_CHARA, MY_SX, MY_SY, MY_LIFE, IT_CHARA, IT_SX, IT_SY, IT_LIFE);
 
-  // サーバーを準備する。クライアントが指定のポートに接続すると,
-  // クライアントと会話するためのデスクリプタを返す
   s = setupServer(PORT);
 
-  // 鬼ごっこゲームの準備
-  setupTagGame(game, s);
+  setupTagGameForServer(game, s);
   setupMazeForServer(game);
 
-  // 鬼ごっこゲームの開始
-  playServerTagGame(game);
+  playTagGameForServer(game);
 
-  // クライアントから切断しないと "can't bind" になるので、少し待つ
   sleep(1);
 
-  // 鬼ごっこゲームの後始末
-  destroyTagGame(game);
+  destroyTagGameForServer(game);
 
   return 0;
 }
