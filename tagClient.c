@@ -9,9 +9,11 @@
 #define MY_CHARA   'o'      // 自分を表すキャラクタ
 #define MY_SX      10       // 自分の開始 X 座標
 #define MY_SY      10       // 自分の開始 Y 座標
+#define MY_LIFE 5
 #define IT_CHARA   'x'      // 相手を表すキャラクタ
 #define IT_SX      1        // 相手の開始 X 座標
 #define IT_SY      1        // 相手の開始 Y 座標
+#define IT_LIFE 5
 
 int main(int argc, char *argv[]) 
 { 
@@ -20,7 +22,7 @@ int main(int argc, char *argv[])
   TagGame *game;                    // 鬼ごっこゲーム
 
   // 鬼ごっこゲームの初期化
-  game = initTagGame(MY_CHARA, MY_SX, MY_SY, IT_CHARA, IT_SX, IT_SY);
+  game = initTagGame(MY_CHARA, MY_SX, MY_SY, MY_LIFE, IT_CHARA, IT_SX, IT_SY, IT_LIFE);
 
   // 引数で指定されたホスト名をサーバとする
   // もし引数がなければ自分自身をサーバーとして仮定し，アクセスを試みる

@@ -19,6 +19,7 @@ typedef struct {
   char    chara;                 // 自分を表すキャラクタ
   int     x;                     // 自分の X 座標
   int     y;                     // 自分の Y 座標
+  int life;
 } Player;
 
 /*
@@ -33,6 +34,7 @@ typedef struct {
 
   // 画面関連のデータ
   WINDOW *mainWin;               // メインウィンドウ
+  WINDOW *lifeWin;               // メインウィンドウ
   
   int mazeHeight;
   int mazeWidth;
@@ -62,8 +64,8 @@ typedef struct {
  * 戻値 :
  *   鬼ごっこゲームオブジェクトへのポインタ
  */
-TagGame* initTagGame(char myChara, int mySX, int mySY,
-                     char itChara, int itSX, int itSY);
+TagGame* initTagGame(char myChara, int mySX, int mySY, int myLife,
+                     char itChara, int itSX, int itSY , int itLife);
 
 /*
  * 鬼ごっこゲームの準備

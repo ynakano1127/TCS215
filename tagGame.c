@@ -7,6 +7,8 @@
 
 #define MAINWIN_SX      2
 #define MAINWIN_SY      1
+#define LIFEWIN_SX      50
+#define LIFEWIN_SY      1
 
 #define MOVE_UP         'i'
 #define MOVE_LEFT       'j'
@@ -16,6 +18,9 @@
 #define SERVER_MSG_LEN   (8 + 8 + 1)
 
 #define CLIENT_MSG_LEN   (4 + 1)
+
+#define LIFE_WIN_WIDTH 10
+#define LIFE_WIN_HEIGHT 5
 
 typedef struct {
   int myKey;
@@ -44,8 +49,8 @@ static void die();
 static void printMessage(WINDOW *mw, char *message, int length);
 
 
-TagGame* initTagGame(char myChara, int mySX, int mySY,
-                     char itChara, int itSX, int itSY)
+TagGame* initTagGame(char myChara, int mySX, int mySY, int myLife,
+                     char itChara, int itSX, int itSY , int itLife)
 {
   TagGame* game = (TagGame *)malloc(sizeof(TagGame));
 
@@ -54,9 +59,11 @@ TagGame* initTagGame(char myChara, int mySX, int mySY,
   game->my.chara = myChara;
   game->my.x     = mySX;
   game->my.y     = mySY;
+  game->my.life = myLife;
   game->it.chara = itChara;
   game->it.x     = itSX;
   game->it.y     = itSY;
+  game->it.life = itLife;
 
   memcpy(&game->preMy, &game->my, sizeof(Player));
   memcpy(&game->preIt, &game->it, sizeof(Player));
@@ -85,6 +92,14 @@ void setupTagGame(TagGame *game, int s)
   game->fdsetWidth = s + 1;
   game->watchTime.tv_sec  = 0;
   game->watchTime.tv_usec = 100 * 1000;
+
+  game->lifeWin = newwin(LIFE_WIN_HEIGHT, LIFE_WIN_WIDTH, LIFEWIN_SY, LIFEWIN_SX);
+
+  if (game->lifeWin == NULL) {
+    endwin();
+    fprintf(stderr, "Error: terminal size is too small\n");
+    exit(1);
+  }
 }
 
 void setupMazeForServer(TagGame *game){
@@ -382,14 +397,20 @@ static void printGame(TagGame *game)
     }
   }
 
-
   mvwaddch(mw, preIt->y, preIt->x, ' ');
   mvwaddch(mw, it->y, it->x, it->chara);
 
   mvwaddch(mw, preMy->y, preMy->x, ' ');
   mvwaddch(mw, my->y, my->x, my->chara);
 
+  WINDOW *lw = game->lifeWin;
+  box(lw, '|', '-');
+  wmove(lw, 2,1);
+  wprintw(lw, "LIFE: %d", game->my.life);
+  
+  
   wrefresh(mw);
+  wrefresh(lw);
 }
 
 static void printMessage(WINDOW *mw, char *message, int length)
