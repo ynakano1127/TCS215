@@ -2,3 +2,4 @@ tagClient
 tagServer
 *.o
 *.out
+core.*

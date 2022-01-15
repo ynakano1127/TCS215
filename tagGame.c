@@ -25,6 +25,13 @@ void printGame(TagGame *game)
     }
   }
 
+  Bullet *bs = game->bullets;
+  for (int i = 0; i < game->bullet_num; i++)
+  {
+    if (game->maze[bs[i].y][bs[i].x] == 0)
+      mvwaddch(mw, bs[i].y, bs[i].x, '*');
+  }
+
   Demon *my = &game->demon;
   Player *it = &game->player;
 

@@ -43,11 +43,27 @@ typedef struct
   int life;
 } Player;
 
+#define BULLET_NUM_MEX 100
+#define BULLET_SPPED_TYPE_UP 1
+#define BULLET_SPPED_TYPE_DOWN 2
+#define BULLET_SPPED_TYPE_RIGHT 3
+#define BULLET_SPPED_TYPE_LEFT 4
+
+typedef struct
+{
+  int x;
+  int y;
+  int speed_type;
+} Bullet;
+
 typedef struct
 {
   Demon demon;
   Player player;
   int playerNumber;
+
+  int bullet_num;
+  Bullet *bullets;
 
   WINDOW *mainWin;
   WINDOW *lifeWin;
@@ -66,6 +82,7 @@ typedef struct
 {
   int myKey;
   int itKey;
+  int bullet;
   int quit;
 } ServerInputData;
 
@@ -77,6 +94,8 @@ typedef struct
   int mylife;
   int itX;
   int itY;
+  int bullet_num;
+  Bullet *bullet;
   int quit;
   int dead;
 } ClientInputData;

@@ -7,6 +7,7 @@
 
 static void getServerInputData(TagGame *game, ServerInputData *serverData);
 static int updatePlayerStatus(TagGame *game, ServerInputData *serverData);
+static void updateBulletsStatus(TagGame *game);
 static void sendGameInfo(TagGame *game);
 static int canGoThrough(TagGame *game, int y, int x);
 
@@ -26,6 +27,9 @@ TagGame *initTagGameForServer(char dChara, int dSX, int dSY,
   game->player.life = pLife;
 
   game->playerNumber = MAX_CLIENT_NUM;
+
+  game->bullet_num = 0;
+  game->bullets = (Bullet *)malloc(sizeof(Bullet) * BULLET_NUM_MEX);
 
   initscr();
 
@@ -98,7 +102,17 @@ void playTagGameForServer(TagGame *game)
     if (serverData.quit)
       break;
 
-    if(updatePlayerStatus(game, &serverData)){
+    if (serverData.bullet != 0 && game->bullet_num <= BULLET_NUM_MEX)
+    {
+      game->bullets[game->bullet_num].x = game->demon.x;
+      game->bullets[game->bullet_num].y = game->demon.y;
+      game->bullets[game->bullet_num].speed_type = serverData.bullet;
+      game->bullet_num++;
+    }
+    updateBulletsStatus(game);
+
+    if (updatePlayerStatus(game, &serverData))
+    {
       game->player.life--;
     }
 
@@ -140,6 +154,25 @@ static void getServerInputData(TagGame *game, ServerInputData *serverData)
     serverData->myKey = wgetch(game->mainWin);
     if (serverData->myKey == 'q')
       serverData->quit = TRUE;
+
+    switch (serverData->myKey)
+    {
+    case 'w':
+      serverData->bullet = BULLET_SPPED_TYPE_UP;
+      break;
+    case 'z':
+      serverData->bullet = BULLET_SPPED_TYPE_DOWN;
+      break;
+    case 'd':
+      serverData->bullet = BULLET_SPPED_TYPE_RIGHT;
+      break;
+    case 'a':
+      serverData->bullet = BULLET_SPPED_TYPE_LEFT;
+      break;
+
+    default:
+      break;
+    }
   }
 
   if (FD_ISSET(game->s, &arrived))
@@ -155,6 +188,34 @@ static void getServerInputData(TagGame *game, ServerInputData *serverData)
   usleep(watchTime.tv_usec);
   if (serverData->myKey != 0)
     flushinp();
+}
+static void updateBulletsStatus(TagGame *game)
+{
+  for (int i = 0; i < game->bullet_num; i++)
+  {
+    Bullet b = game->bullets[i];
+    if (!canGoThrough(game, b.y, b.x))
+      continue;
+
+    switch (b.speed_type)
+    {
+    case BULLET_SPPED_TYPE_UP:
+      game->bullets[i].y--;
+      break;
+    case BULLET_SPPED_TYPE_DOWN:
+      game->bullets[i].y++;
+      break;
+    case BULLET_SPPED_TYPE_LEFT:
+      game->bullets[i].x--;
+      break;
+    case BULLET_SPPED_TYPE_RIGHT:
+      game->bullets[i].x++;
+      break;
+
+    default:
+      break;
+    }
+  }
 }
 
 static int updatePlayerStatus(TagGame *game, ServerInputData *serverData)
@@ -220,6 +281,15 @@ static int updatePlayerStatus(TagGame *game, ServerInputData *serverData)
     return TRUE;
   }
 
+  for (int i = 0; i < game->bullet_num; i++)
+  {
+    Bullet b = game->bullets[i];
+    if (b.x == it->x && b.y == it->y)
+    {
+      return TRUE;
+    }
+  }
+
   return FALSE;
 }
 
@@ -232,6 +302,18 @@ static void sendGameInfo(TagGame *game)
   sprintf(msg, "%3d %3d %3d %3d %3d", my->x, my->y, it->x, it->y, it->life);
 
   write(game->s, msg, SERVER_MSG_LEN);
+
+  char msg2[SERVER_MSG_LEN];
+  sprintf(msg2, "%3d", game->bullet_num);
+  write(game->s, msg2, SERVER_MSG_LEN);
+
+  char msg3[SERVER_MSG_LEN];
+  for (int i = 0; i < game->bullet_num; i++)
+  {
+    Bullet b = game->bullets[i];
+    sprintf(msg3, "%3d %3d %3d", b.x, b.y, b.speed_type);
+    write(game->s, msg3, SERVER_MSG_LEN);
+  }
 }
 
 static int canGoThrough(TagGame *game, int y, int x)

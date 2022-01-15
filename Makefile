@@ -31,4 +31,4 @@ mazeTest:	tests/mazeTest.c maze.o
 	$(CC) $(CFLAGS) -o mazeTest.out tests/mazeTest.c maze.o
 
 clean:
-						rm -f tagServer tagClient *.o *.out
+						rm -f tagServer tagClient *.o *.out core.*

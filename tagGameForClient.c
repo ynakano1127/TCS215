@@ -26,6 +26,9 @@ TagGame *initTagGameForClient(char dChara, int dSX, int dSY,
 
   game->playerNumber = 0;
 
+  game->bullet_num = 0;
+  game->bullets = (Bullet *)malloc(sizeof(Bullet) * BULLET_NUM_MEX);
+
   initscr();
 
   start_color();
@@ -100,9 +103,12 @@ void setupMazeForClient(TagGame *game)
 void playTagGameForClient(TagGame *game)
 {
   ClientInputData clientData;
+  Bullet *bs_address = (Bullet *)malloc(sizeof(Bullet) * BULLET_NUM_MEX);
 
   while (1)
   {
+    bzero(&clientData, sizeof(ClientInputData));
+    clientData.bullet = bs_address;
     getClientInputData(game, &clientData);
 
     if (clientData.quit)
@@ -139,8 +145,6 @@ static void getClientInputData(TagGame *game, ClientInputData *clientData)
   TimeVal watchTime = game->watchTime;
   char msg[SERVER_MSG_LEN];
 
-  bzero(clientData, sizeof(ClientInputData));
-
   select(game->fdsetWidth, &arrived, NULL, NULL, &watchTime);
 
   if (FD_ISSET(0, &arrived))
@@ -163,6 +167,17 @@ static void getClientInputData(TagGame *game, ClientInputData *clientData)
     {
       sscanf(msg, "%3d %3d %3d %3d %3d", &clientData->itX, &clientData->itY,
              &clientData->myX, &clientData->myY, &clientData->mylife);
+
+      read(game->s, msg, SERVER_MSG_LEN);
+      lseek(game->s, 0, SEEK_END);
+      sscanf(msg, "%3d", &clientData->bullet_num);
+
+      for (int i = 0; i < clientData->bullet_num; i++)
+      {
+        read(game->s, msg, SERVER_MSG_LEN);
+        lseek(game->s, 0, SEEK_END);
+        sscanf(msg, "%3d %3d %3d", &clientData->bullet[i].x, &clientData->bullet[i].y, &clientData->bullet[i].speed_type);
+      }
     }
   }
 
@@ -184,6 +199,14 @@ static void copyGameState(TagGame *game, ClientInputData *clientData)
   my->life = clientData->mylife;
   it->x = clientData->itX;
   it->y = clientData->itY;
+
+  game->bullet_num = clientData->bullet_num;
+  for (int i = 0; i < clientData->bullet_num; i++)
+  {
+    game->bullets[i].x = clientData->bullet[i].x;
+    game->bullets[i].y = clientData->bullet[i].y;
+    game->bullets[i].speed_type = clientData->bullet[i].speed_type;
+  }
 }
 
 static void sendMyPressedKey(TagGame *game, ClientInputData *clietData)
