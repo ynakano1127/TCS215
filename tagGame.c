@@ -33,17 +33,20 @@ void printGame(TagGame *game)
   }
 
   Demon *my = &game->demon;
-  Player *it = &game->player;
-
-  mvwaddch(mw, it->y, it->x, it->chara);
   mvwaddch(mw, my->y, my->x, my->chara);
+
+  for (int i = 0; i < game->player_num; i++)
+  {
+    Player *it = &game->players[i];
+    mvwaddch(mw, it->y, it->x, it->chara);
+  }
 
   if (game->playerNumber != MAX_CLIENT_NUM)
   {
     WINDOW *lw = game->lifeWin;
     box(lw, '|', '-');
     wmove(lw, 2, 1);
-    wprintw(lw, "LIFE: %d", game->player.life);
+    wprintw(lw, "LIFE: %d", game->players[game->playerNumber].life);
     wrefresh(lw);
   }
   wrefresh(mw);

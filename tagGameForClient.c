@@ -14,16 +14,18 @@ TagGame *initTagGameForClient(char dChara, int dSX, int dSY,
 {
   TagGame *game = (TagGame *)malloc(sizeof(TagGame));
 
-  bzero(game, sizeof(TagGame));
+  // bzero(game, sizeof(TagGame));
 
   game->demon.chara = dChara;
   game->demon.x = dSX;
   game->demon.y = dSY;
-  game->player.chara = pChara;
-  game->player.x = pSX;
-  game->player.y = pSY;
-  game->player.life = pLife;
-
+  for (int i = 0; i < MAX_CLIENT_NUM; i++)
+  {
+    game->players[i].chara = pChara;
+    game->players[i].x = pSX;
+    game->players[i].y = pSY;
+    game->players[i].life = pLife;
+  }
   game->playerNumber = 0;
 
   game->bullet_num = 0;
@@ -65,8 +67,8 @@ void setupTagGameForClient(TagGame *game, int s)
 
 void setupMazeForClient(TagGame *game)
 {
-  char msg[MSG_LEN];
-  read(game->s, msg, MSG_LEN);
+  char msg[SERVER_MSG_LEN];
+  read(game->s, msg, SERVER_MSG_LEN);
   sscanf(msg, "%3d %3d", &game->mazeHeight, &game->mazeWidth);
   fprintf(stderr, "%d %d\n", game->mazeHeight, game->mazeWidth);
 
@@ -80,7 +82,7 @@ void setupMazeForClient(TagGame *game)
   {
     for (int w = 0; w < game->mazeWidth; w++)
     {
-      read(game->s, msg, MSG_LEN);
+      read(game->s, msg, SERVER_MSG_LEN);
       sscanf(msg, "%3d", &game->maze[h][w]);
     }
   }
@@ -97,7 +99,7 @@ void setupMazeForClient(TagGame *game)
   keypad(game->mainWin, TRUE);
   box(game->mainWin, ACS_VLINE, ACS_HLINE);
 
-  wrefresh(game->mainWin);
+  // wrefresh(game->mainWin);
 }
 
 void playTagGameForClient(TagGame *game)
@@ -165,8 +167,14 @@ static void getClientInputData(TagGame *game, ClientInputData *clientData)
       clientData->dead = TRUE;
     else
     {
-      sscanf(msg, "%3d %3d %3d %3d %3d", &clientData->itX, &clientData->itY,
-             &clientData->myX, &clientData->myY, &clientData->mylife);
+      sscanf(msg, "%3d %3d %3d %3d", &clientData->player_my_number, &clientData->itX, &clientData->itY, &clientData->player_num);
+
+      for (int i = 0; i < clientData->player_num; i++)
+      {
+        read(game->s, msg, SERVER_MSG_LEN);
+        lseek(game->s, 0, SEEK_END);
+        sscanf(msg, "%3d %3d %3d", &clientData->players[i].x, &clientData->players[i].y, &clientData->players[i].life);
+      }
 
       read(game->s, msg, SERVER_MSG_LEN);
       lseek(game->s, 0, SEEK_END);
@@ -178,6 +186,14 @@ static void getClientInputData(TagGame *game, ClientInputData *clientData)
         lseek(game->s, 0, SEEK_END);
         sscanf(msg, "%3d %3d %3d", &clientData->bullet[i].x, &clientData->bullet[i].y, &clientData->bullet[i].speed_type);
       }
+
+      // printf("player_my_number = %d\n", clientData->player_my_number);
+      // printf("itX = %d\n", clientData->itX);
+      // printf("itY = %d\n", clientData->itY);
+      // printf("playersx = %d\n", clientData->players[clientData->player_my_number].x);
+      // printf("playersy = %d\n", clientData->players[clientData->player_my_number].y);
+      // printf("player_num = %d\n", clientData->player_num);
+      // printf("bullet_num = %d\n", clientData->bullet_num);
     }
   }
 
@@ -188,17 +204,19 @@ static void getClientInputData(TagGame *game, ClientInputData *clientData)
 
 static void copyGameState(TagGame *game, ClientInputData *clientData)
 {
-  Player *my = &game->player;
-  Demon *it = &game->demon;
-
-  if (clientData->myX == 0)
+  if (clientData->player_num == 0)
     return;
 
-  my->x = clientData->myX;
-  my->y = clientData->myY;
-  my->life = clientData->mylife;
-  it->x = clientData->itX;
-  it->y = clientData->itY;
+  game->player_num = clientData->player_num;
+  game->playerNumber = clientData->player_my_number;
+  for(int i=0;i<clientData->player_num;i++){
+    game->players[i].x = clientData->players[i].x;
+    game->players[i].y = clientData->players[i].y;
+    game->players[i].life = clientData->players[i].life;
+  }  
+
+  game->demon.x = clientData->itX;
+  game->demon.y = clientData->itY;
 
   game->bullet_num = clientData->bullet_num;
   for (int i = 0; i < clientData->bullet_num; i++)
@@ -207,6 +225,19 @@ static void copyGameState(TagGame *game, ClientInputData *clientData)
     game->bullets[i].y = clientData->bullet[i].y;
     game->bullets[i].speed_type = clientData->bullet[i].speed_type;
   }
+  // printf("player_my_number = %d\n", clientData->player_my_number);
+  // printf("itX = %d\n", clientData->itX);
+  // printf("itY = %d\n", clientData->itY);
+  // printf("playersx = %d\n", clientData->players[clientData->player_my_number].x);
+  // printf("playersy = %d\n", clientData->players[clientData->player_my_number].y);
+  // printf("player_num = %d\n", clientData->player_num);
+  // printf("bullet_num = %d\n", clientData->bullet_num);
+  // printf("player_num = %d\n", game->player_num);
+  // printf("playerNumber = %d\n", game->playerNumber);
+  // printf("game->players[i].x = %d\n", game->players[game->playerNumber].x);
+  // printf("game->players[i].x = %d\n", game->players[game->playerNumber].x);
+  // printf("game->daemon.x = %d\n", game->demon.x);
+  // printf("game->daemon.y = %d\n", game->demon.y);
 }
 
 static void sendMyPressedKey(TagGame *game, ClientInputData *clietData)

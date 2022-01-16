@@ -59,7 +59,9 @@ typedef struct
 typedef struct
 {
   Demon demon;
-  Player player;
+
+  int player_num;
+  Player players[MAX_CLIENT_NUM];
   int playerNumber;
 
   int bullet_num;
@@ -81,7 +83,7 @@ typedef struct
 typedef struct
 {
   int myKey;
-  int itKey;
+  int itKeys[MAX_CLIENT_NUM];
   int bullet;
   int quit;
 } ServerInputData;
@@ -89,8 +91,9 @@ typedef struct
 typedef struct
 {
   int myKey;
-  int myX;
-  int myY;
+  int player_num;
+  Player players[MAX_CLIENT_NUM];
+  int player_my_number;
   int mylife;
   int itX;
   int itY;

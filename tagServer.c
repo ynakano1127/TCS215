@@ -1,4 +1,3 @@
-#include "snet.h"
 #include "tagGameForServer.h"
 
 #define PORT 10000
@@ -12,14 +11,12 @@
 
 int main(int argc, char *argv[])
 {
-  int s;
-  TagGame *game;
+  TagGameForServer *game;
+  game = initTagGameForServer(D_CHARA, D_SX, D_SY);
 
-  game = initTagGameForServer(D_CHARA, D_SX, D_SY, PLAYER_CHARA, PLAYER_SX, PLAYER_SY, PLAYER_LIFE);
-
-  s = setupServer(PORT);
-
-  setupTagGameForServer(game, s);
+  setupMultiServer(PORT, &game->clients);
+  
+  setupTagGameForServer(game, PLAYER_CHARA, PLAYER_SX, PLAYER_SY, PLAYER_LIFE);
   setupMazeForServer(game);
 
   playTagGameForServer(game);

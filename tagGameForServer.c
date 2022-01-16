@@ -5,27 +5,26 @@
 #include "tagGameForServer.h"
 #include "maze.h"
 
-static void getServerInputData(TagGame *game, ServerInputData *serverData);
-static int updatePlayerStatus(TagGame *game, ServerInputData *serverData);
+static void getServerInputData(TagGameForServer *tgamefs, ServerInputData *serverData);
+static int updatePlayerStatus(TagGameForServer *tgamefs, ServerInputData *serverData);
 static void updateBulletsStatus(TagGame *game);
-static void sendGameInfo(TagGame *game);
+static void sendGameInfo(TagGameForServer *tgamefs);
 static int canGoThrough(TagGame *game, int y, int x);
+static void sendMessage(TagGameForServer *tgamefs, char *msg);
 
-TagGame *initTagGameForServer(char dChara, int dSX, int dSY,
-                              char pChara, int pSX, int pSY, int pLife)
+TagGameForServer *initTagGameForServer(char dChara, int dSX, int dSY)
 {
-  TagGame *game = (TagGame *)malloc(sizeof(TagGame));
+  TagGameForServer *tgamefs = (TagGameForServer *)malloc(sizeof(TagGameForServer));
 
+  for (int i = 0; i < MAX_CLIENT_NUM; i++)
+    tgamefs->isAlived[i] = FALSE;
+
+  TagGame *game = &tgamefs->game;
   bzero(game, sizeof(TagGame));
 
   game->demon.chara = dChara;
   game->demon.x = dSX;
   game->demon.y = dSY;
-  game->player.chara = pChara;
-  game->player.x = pSX;
-  game->player.y = pSY;
-  game->player.life = pLife;
-
   game->playerNumber = MAX_CLIENT_NUM;
 
   game->bullet_num = 0;
@@ -43,38 +42,56 @@ TagGame *initTagGameForServer(char dChara, int dSX, int dSY,
   noecho();
   cbreak();
 
-  return game;
+  return tgamefs;
 }
 
-void setupTagGameForServer(TagGame *game, int s)
+void setupTagGameForServer(TagGameForServer *tgamefs, char pChara, int pSX, int pSY, int pLife)
 {
-  game->s = s;
+  TagGame *game = &tgamefs->game;
+  Clients *clients = &tgamefs->clients;
+
+  game->player_num = clients->num;
+  for (int i = 0; i < clients->num; i++)
+  {
+    tgamefs->isAlived[i] = TRUE;
+    game->players[i].chara = pChara;
+    game->players[i].x = pSX;
+    game->players[i].y = pSY;
+    game->players[i].life = pLife;
+  }
+
   FD_ZERO(&(game->fdset));
   FD_SET(0, &(game->fdset));
-  FD_SET(s, &(game->fdset));
-  game->fdsetWidth = s + 1;
+  for (int i = 0; i < clients->num; i++)
+    FD_SET(clients->fd[i], &(game->fdset));
+  game->fdsetWidth = clients->fd[clients->num - 1] + 1;
   game->watchTime.tv_sec = 0;
   game->watchTime.tv_usec = 100 * 1000;
 }
 
-void setupMazeForServer(TagGame *game)
+void setupMazeForServer(TagGameForServer *tgamefs)
 {
+  fprintf(stderr, "hello");
+  TagGame *game = &tgamefs->game;
+
   game->mazeHeight = MAIN_WIN_HEIGHT;
   game->mazeWidth = MAIN_WIN_WIDTH;
   game->maze = makeMaze(game->mazeHeight, game->mazeWidth);
 
   char msg[MSG_LEN];
   sprintf(msg, "%3d %3d", game->mazeHeight, game->mazeWidth);
-  write(game->s, msg, MSG_LEN);
+  sendMessage(tgamefs, msg);
+  fprintf(stderr, "hello2");
 
   for (int h = 0; h < game->mazeHeight; h++)
   {
     for (int w = 0; w < game->mazeWidth; w++)
     {
       sprintf(msg, "%3d", game->maze[h][w]);
-      write(game->s, msg, MSG_LEN);
+      sendMessage(tgamefs, msg);
     }
   }
+  fprintf(stderr, "hello3");
 
   game->mainWin = newwin(game->mazeHeight, game->mazeWidth, MAINWIN_SY, MAINWIN_SX);
 
@@ -91,13 +108,17 @@ void setupMazeForServer(TagGame *game)
   wrefresh(game->mainWin);
 }
 
-void playTagGameForServer(TagGame *game)
+void playTagGameForServer(TagGameForServer *tgamefs)
 {
+  TagGame *game = &tgamefs->game;
+  // Clients *clients = &tgamefs->clients;
+  // int *isAlived = tgamefs->isAlived;
+
   ServerInputData serverData;
 
   while (1)
   {
-    getServerInputData(game, &serverData);
+    getServerInputData(tgamefs, &serverData);
 
     if (serverData.quit)
       break;
@@ -111,14 +132,9 @@ void playTagGameForServer(TagGame *game)
     }
     updateBulletsStatus(game);
 
-    if (updatePlayerStatus(game, &serverData))
+    if (updatePlayerStatus(tgamefs, &serverData))
     {
-      game->player.life--;
-    }
-
-    if (game->player.life < 0)
-    {
-      write(game->s, "dead", 5);
+      sendMessage(tgamefs, "dead");
       printMessage(game->mainWin, "WIN", 3);
       sleep(3);
       break;
@@ -126,22 +142,27 @@ void playTagGameForServer(TagGame *game)
 
     printGame(game);
 
-    sendGameInfo(game);
+    sendGameInfo(tgamefs);
   }
 
-  write(game->s, "quit", 5);
+  sendMessage(tgamefs, "quit");
 }
 
-void destroyTagGameForServer(TagGame *game)
+void destroyTagGameForServer(TagGameForServer *tgamefs)
 {
-  delwin(game->mainWin);
-  close(game->s);
-  free(game);
+  delwin(tgamefs->game.mainWin);
+  for (int i = 0; i < tgamefs->clients.num; i++)
+    close(tgamefs->clients.fd[i]);
+  free(tgamefs);
   die();
 }
 
-static void getServerInputData(TagGame *game, ServerInputData *serverData)
+static void getServerInputData(TagGameForServer *tgamefs, ServerInputData *serverData)
 {
+  TagGame *game = &tgamefs->game;
+  Clients *clients = &tgamefs->clients;
+  int *isAlived = tgamefs->isAlived;
+
   fd_set arrived = game->fdset;
   TimeVal watchTime = game->watchTime;
   char msg[CLIENT_MSG_LEN];
@@ -175,14 +196,22 @@ static void getServerInputData(TagGame *game, ServerInputData *serverData)
     }
   }
 
-  if (FD_ISSET(game->s, &arrived))
+  for (int i = 0; i < clients->num; i++)
   {
-    read(game->s, msg, CLIENT_MSG_LEN);
+    if (!isAlived[i])
+      continue;
+    if (!FD_ISSET(clients->fd[i], &arrived))
+      continue;
 
-    if (strcmp(msg, "quit") == 0)
-      serverData->quit = TRUE;
-    else
-      sscanf(msg, "%3d ", &serverData->itKey);
+    if (FD_ISSET(clients->fd[i], &arrived))
+    {
+      read(clients->fd[i], msg, CLIENT_MSG_LEN);
+
+      if (strcmp(msg, "quit") == 0)
+        serverData->quit = TRUE;
+      else
+        sscanf(msg, "%3d ", &serverData->itKeys[i]);
+    }
   }
 
   usleep(watchTime.tv_usec);
@@ -218,8 +247,11 @@ static void updateBulletsStatus(TagGame *game)
   }
 }
 
-static int updatePlayerStatus(TagGame *game, ServerInputData *serverData)
+static int updatePlayerStatus(TagGameForServer *tgamefs, ServerInputData *serverData)
 {
+  TagGame *game = &tgamefs->game;
+  Clients *clients = &tgamefs->clients;
+
   Demon *my = &game->demon;
   switch (serverData->myKey)
   {
@@ -248,71 +280,99 @@ static int updatePlayerStatus(TagGame *game, ServerInputData *serverData)
     break;
   }
 
-  Player *it = &game->player;
-  switch (serverData->itKey)
+  for (int i = 0; i < clients->num; i++)
   {
-  case KEY_UP:
-  case MOVE_UP:
-    if (canGoThrough(game, it->y - 1, it->x))
-      it->y--;
-    break;
+    if (!serverData->itKeys[i])
+      continue;
+    Player *it = &game->players[i];
+    switch (serverData->itKeys[i])
+    {
+    case KEY_UP:
+    case MOVE_UP:
+      if (canGoThrough(game, it->y - 1, it->x))
+        it->y--;
+      break;
 
-  case KEY_DOWN:
-  case MOVE_DOWN:
-    if (canGoThrough(game, it->y + 1, it->x))
-      it->y++;
-    break;
+    case KEY_DOWN:
+    case MOVE_DOWN:
+      if (canGoThrough(game, it->y + 1, it->x))
+        it->y++;
+      break;
 
-  case KEY_LEFT:
-  case MOVE_LEFT:
-    if (canGoThrough(game, it->y, it->x - 1))
-      it->x--;
-    break;
+    case KEY_LEFT:
+    case MOVE_LEFT:
+      if (canGoThrough(game, it->y, it->x - 1))
+        it->x--;
+      break;
 
-  case KEY_RIGHT:
-  case MOVE_RIGHT:
-    if (canGoThrough(game, it->y, it->x + 1))
-      it->x++;
-    break;
+    case KEY_RIGHT:
+    case MOVE_RIGHT:
+      if (canGoThrough(game, it->y, it->x + 1))
+        it->x++;
+      break;
+    }
   }
 
-  if (my->x == it->x && my->y == it->y)
+  for (int i = 0; i < clients->num; i++)
   {
-    return TRUE;
+    Player *it = &game->players[i];
+    if (my->x == it->x && my->y == it->y)
+    {
+      return TRUE;
+    }
   }
 
   for (int i = 0; i < game->bullet_num; i++)
   {
     Bullet b = game->bullets[i];
-    if (b.x == it->x && b.y == it->y)
+    for (int i = 0; i < clients->num; i++)
     {
-      return TRUE;
+      Player *it = &game->players[i];
+      if (b.x == it->x && b.y == it->y)
+      {
+        it->life--;
+        if (it->life < 0)
+          return TRUE;
+      }
     }
   }
 
   return FALSE;
 }
 
-static void sendGameInfo(TagGame *game)
+static void sendGameInfo(TagGameForServer *tgamefs)
 {
+  TagGame *game = &tgamefs->game;
+  Clients *clients = &tgamefs->clients;
+  int *isAlived = tgamefs->isAlived;
+
   Demon *my = &game->demon;
-  Player *it = &game->player;
   char msg[SERVER_MSG_LEN];
 
-  sprintf(msg, "%3d %3d %3d %3d %3d", my->x, my->y, it->x, it->y, it->life);
+  for (int i = 0; i < clients->num; i++)
+  {
+    sprintf(msg, "%3d %3d %3d %3d", i, my->x, my->y, clients->num);
+    if (isAlived[i])
+      write(clients->fd[i], msg, SERVER_MSG_LEN);
+  }
 
-  write(game->s, msg, SERVER_MSG_LEN);
+  for (int i = 0; i < clients->num; i++)
+  {
+    Player *it = &game->players[i];
+    sprintf(msg, "%3d %3d %3d", it->x, it->y, it->life);
+    sendMessage(tgamefs, msg);
+  }
 
   char msg2[SERVER_MSG_LEN];
   sprintf(msg2, "%3d", game->bullet_num);
-  write(game->s, msg2, SERVER_MSG_LEN);
+  sendMessage(tgamefs, msg2);
 
   char msg3[SERVER_MSG_LEN];
   for (int i = 0; i < game->bullet_num; i++)
   {
     Bullet b = game->bullets[i];
     sprintf(msg3, "%3d %3d %3d", b.x, b.y, b.speed_type);
-    write(game->s, msg3, SERVER_MSG_LEN);
+    sendMessage(tgamefs, msg3);
   }
 }
 
@@ -326,4 +386,14 @@ static int canGoThrough(TagGame *game, int y, int x)
     return 0;
   }
   return 1;
+}
+
+static void sendMessage(TagGameForServer *tgamefs, char *msg)
+{
+  Clients *clients = &tgamefs->clients;
+  int *isAlived = tgamefs->isAlived;
+
+  for (int i = 0; i < clients->num; i++)
+    if (isAlived[i])
+      write(clients->fd[i], msg, SERVER_MSG_LEN);
 }
