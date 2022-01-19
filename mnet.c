@@ -52,7 +52,7 @@ static int initMultiServer(int port)
     exit(1);
   }
 
-  if (bind(s_waiting, &serverAddress, sizeof(SocketAddress)) == -1)
+  if (bind(s_waiting, (struct sockaddr*)&serverAddress, sizeof(SocketAddress)) == -1)
   {
     fprintf(stderr, "cannot bind.\n");
     exit(1);
@@ -98,12 +98,12 @@ static void acceptClients(int s_waiting, Clients *clients)
     if (FD_ISSET(s_waiting, &arrived))
     {
       SocketAddress clientAddress;
-      int lengthAddress;
+      unsigned int lengthAddress;
       HostEntry *clientInfo;
       int no = clients->num;
 
       lengthAddress = sizeof(SocketAddress);
-      clients->fd[no] = accept(s_waiting, &clientAddress, &lengthAddress);
+      clients->fd[no] = accept(s_waiting, (struct sockaddr*)&clientAddress, &lengthAddress);
 
       clientInfo = gethostbyaddr((char *)&clientAddress.sin_addr, sizeof(struct in_addr), AF_INET);
       strcpy(clients->name[no], clientInfo->h_name);
