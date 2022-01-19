@@ -3,3 +3,4 @@ tagServer
 *.o
 *.out
 core.*
+*.a

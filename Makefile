@@ -48,4 +48,4 @@ mazeTest:	tests/mazeTest.c maze.o
 
 
 clean:
-						rm -f tagServer tagClient *.o *.out core.*
+						rm -f tagServer tagClient *.o *.out core.* *.a
